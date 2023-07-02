@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
-	"strconv"
 
 	"github.com/meivaldi/gaplek/cmd"
 	grpcHandler "github.com/meivaldi/gaplek/internal/delivery/grpc"
@@ -18,23 +16,14 @@ import (
 )
 
 func main() {
-	host := os.Getenv("APP_HOST")
-	port, err := strconv.Atoi(os.Getenv("PORT"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		port = 50051
-	}
-
-	if host == "" {
-		host = "0.0.0.0"
-	}
-
-	if port <= 0 {
-		port = 50051
-	}
-
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
-	if err != nil {
-		log.Fatalf("[GRPC] failed to listen %s:%d", host, port)
+		log.Fatalf("[GRPC] failed to listen to port %s", port)
 		return
 	}
 
@@ -48,7 +37,7 @@ func main() {
 	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
 	reflection.Register(grpcServer)
 
-	log.Printf("[GRPC] serve at %s:%d", host, port)
+	log.Printf("[GRPC] serve at port %s", port)
 
 	grpcServer.Serve(lis)
 }
